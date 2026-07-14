@@ -1,0 +1,76 @@
+version: '3.8'
+
+services:
+  # Service A (api): FastAPI Application & LangGraph Agent with MCP Client
+  api:
+    image: statify-api:latest
+    build:
+      context: .
+      dockerfile_inline: |
+        FROM python:3.11-slim
+        WORKDIR /app
+        ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
+        RUN apt-get update && apt-get install -y --no-install-recommends build-essential curl && rm -rf /var/lib/apt/lists/*
+        COPY requirements.txt .
+        RUN pip install --no-cache-dir --upgrade pip && pip install --no-cache-dir -r requirements.txt
+        COPY . /app
+        EXPOSE 8000
+        CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+    container_name: statify-api
+    working_dir: /app
+    volumes:
+      - ./:/app
+    command: >
+      sh -c "pip install --quiet --no-cache-dir -r requirements.txt &&
+             uvicorn main:app --host 0.0.0.0 --port 8000"
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      - MCP_SERVER_URL=http://vector-db:8001/sse
+      - VECTOR_DB_HOST=vector-db
+      - VECTOR_DB_PORT=8001
+    depends_on:
+      - vector-db
+    networks:
+      - statify-net
+    restart: unless-stopped
+
+  # Service B (vector-db): Standalone Vector Database & MCP Server
+  vector-db:
+    image: statify-vector-db:latest
+    build:
+      context: .
+      dockerfile_inline: |
+        FROM python:3.11-slim
+        WORKDIR /app
+        ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
+        RUN apt-get update && apt-get install -y --no-install-recommends build-essential curl && rm -rf /var/lib/apt/lists/*
+        COPY requirements.txt .
+        RUN pip install --no-cache-dir --upgrade pip && pip install --no-cache-dir -r requirements.txt
+        COPY . /app
+        EXPOSE 8001
+        CMD ["python", "mcp_server.py"]
+    container_name: statify-vector-db
+    working_dir: /app
+    volumes:
+      - ./:/app
+      - chroma_data:/app/chroma_db
+    command: >
+      sh -c "pip install --quiet --no-cache-dir -r requirements.txt &&
+             python mcp_server.py"
+    ports:
+      - "8001:8001"
+    env_file:
+      - .env
+    networks:
+      - statify-net
+    restart: unless-stopped
+
+networks:
+  statify-net:
+    driver: bridge
+
+volumes:
+  chroma_data:

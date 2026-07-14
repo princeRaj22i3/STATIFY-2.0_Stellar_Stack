@@ -1,0 +1,45 @@
+
+# LangChain Ecosystem
+langchain
+langchain-core
+langchain-community
+langchain-text-splitters
+langchain-huggingface
+langchain-chroma
+langgraph
+
+# Vector Database
+chromadb
+
+# Embedding Models
+sentence-transformers
+transformers
+huggingface-hub
+torch
+
+# Financial Data
+yfinance
+
+# Web Search
+ddgs
+
+# PDF Processing
+pypdf
+
+# Data Validation
+pydantic
+
+# Environment Variables
+python-dotenv
+
+
+# HTTP Requests
+requests
+
+
+fastapi
+uvicorn
+langchain-mcp-adapters
+mcp
+sse-starlette
+pywin32
